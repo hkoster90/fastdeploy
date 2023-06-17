@@ -31,7 +31,7 @@ FastDeploy is a powerful and user-friendly deployment and configuration manageme
 
 ## Contributing
 
-Contributions are welcome! If you'd like to contribute to FastDeploy.io, please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome! If you'd like to contribute to FastDeploy, please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
