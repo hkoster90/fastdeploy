@@ -7,18 +7,33 @@ class DuplicateHostnameError(Exception):
     """Exception raised for duplicate hostnames in the inventory."""
 
     def __init__(self, hostname: str):
+        """
+        Initialize DuplicateHostnameError.
+
+        Args:
+            hostname (str): The duplicate hostname.
+        """
         self.hostname = hostname
         super().__init__(f"Hostname(s) '{hostname}' already exists in the inventory.")
 
 
 class InventoryManager:
     def __init__(self, db_url: str, db_name: str, db_collection: str):
+        """
+        Initialize the InventoryManager.
+
+        Args:
+            db_url (str): The URL of the MongoDB.
+            db_name (str): The name of the database.
+            db_collection (str): The name of the collection.
+        """
         self.client = MongoClient(db_url)
         self.db = self.client[db_name]
         self.collection = self.db[db_collection]
 
     def is_duplicate_hostname(self, hostname: str) -> bool:
-        """Check if a hostname already exists in the inventory.
+        """
+        Check if a hostname already exists in the inventory.
 
         Args:
             hostname (str): The hostname to check.
@@ -29,7 +44,8 @@ class InventoryManager:
         return self.collection.count_documents({'hostname': hostname}) > 0
 
     def add_host(self, host: Host) -> None:
-        """Add a host to the inventory.
+        """
+        Add a host to the inventory.
 
         Args:
             host (Host): The host object representing the host to add.
@@ -51,7 +67,8 @@ class InventoryManager:
         self.collection.insert_one(host_data)
 
     def add_hosts(self, hosts: List[Host]) -> None:
-        """Add multiple hosts to the inventory.
+        """
+        Add multiple hosts to the inventory.
 
         Args:
             hosts (List[Host]): List of host objects representing the hosts to add.
@@ -82,7 +99,8 @@ class InventoryManager:
             raise DuplicateHostnameError(', '.join(duplicate_hostnames))
 
     def update_host(self, hostname: str, new_data: Dict) -> None:
-        """Update a host in the inventory.
+        """
+        Update a host in the inventory.
 
         Args:
             hostname (str): The hostname of the host to update.
@@ -91,7 +109,8 @@ class InventoryManager:
         self.collection.update_one({'hostname': hostname}, {'$set': new_data})
 
     def delete_host(self, hostname: str) -> None:
-        """Delete a host from the inventory.
+        """
+        Delete a host from the inventory.
 
         Args:
             hostname (str): The hostname of the host to delete.
@@ -99,7 +118,8 @@ class InventoryManager:
         self.collection.delete_one({'hostname': hostname})
 
     def get_host_by_name(self, hostname: str, decrypt_password: bool = False) -> Optional[Host]:
-        """Retrieve a host by its hostname.
+        """
+        Retrieve a host by its hostname.
 
         Args:
             hostname (str): The hostname of the host.
@@ -111,15 +131,16 @@ class InventoryManager:
         host_data = self.collection.find_one({'hostname': hostname})
         if host_data:
             return Host(
-                host_data['hostname'],
-                host_data['ip_address'],
-                host_data['password'],
-                host_data['private_key_path']
+                hostname=host_data['hostname'],
+                ip_address=host_data['ip_address'],
+                password=host_data['password'],
+                private_key_path=host_data['private_key_path']
             )
         return None
 
     def get_hosts(self, decrypt_password: bool = False) -> List[Host]:
-        """Retrieve all hosts from the inventory.
+        """
+        Retrieve all hosts from the inventory.
 
         Args:
             decrypt_password (bool): Whether to decrypt passwords or not.
@@ -132,16 +153,17 @@ class InventoryManager:
         for host in hosts:
             host_list.append(
                 Host(
-                    host['hostname'],
-                    host['ip_address'],
-                    host['password'],
-                    host['private_key_path']
+                    hostname=host['hostname'],
+                    ip_address=host['ip_address'],
+                    password=host['password'],
+                    private_key_path=host['private_key_path']
                 )
             )
         return host_list
 
     def add_group(self, group: HostGroup) -> None:
-        """Add a group to the inventory.
+        """
+        Add a group to the inventory.
 
         Args:
             group (HostGroup): The group object representing the group to add.
@@ -149,17 +171,18 @@ class InventoryManager:
         Raises:
             ValueError: If the group name already exists in the inventory.
         """
-        if self.get_group_by_name(group.group_name):
-            raise ValueError(f"Group '{group.group_name}' already exists in the inventory.")
+        if self.get_group_by_name(group.name):
+            raise ValueError(f"Group '{group.name}' already exists in the inventory.")
 
         group_data = {
             'group_name': group.group_name,
-            'description': group.description
+            'hosts': []
         }
         self.collection.insert_one(group_data)
 
     def delete_group(self, group_name: str) -> None:
-        """Delete a group from the inventory.
+        """
+        Delete a group from the inventory.
 
         Args:
             group_name (str): The name of the group to delete.
@@ -167,7 +190,8 @@ class InventoryManager:
         self.collection.delete_one({'group_name': group_name})
 
     def update_group(self, group_name: str, new_data: Dict) -> None:
-        """Update a group in the inventory.
+        """
+        Update a group in the inventory.
 
         Args:
             group_name (str): The name of the group to update.
@@ -176,7 +200,8 @@ class InventoryManager:
         self.collection.update_one({'group_name': group_name}, {'$set': new_data})
 
     def get_group_by_name(self, group_name: str) -> Optional[HostGroup]:
-        """Retrieve a group by its name.
+        """
+        Retrieve a group by its name.
 
         Args:
             group_name (str): The name of the group.
@@ -186,32 +211,35 @@ class InventoryManager:
         """
         group_data = self.collection.find_one({'group_name': group_name})
         if group_data:
-            return HostGroup(group_data['group_name'], group_data['description'])
+            return HostGroup(name=group_data['group_name'], description=group_data['description'])
         return None
 
     def get_groups(self) -> List[HostGroup]:
-        """Retrieve all groups from the inventory.
+        """
+        Retrieve all groups from the inventory.
 
         Returns:
             List[HostGroup]: List of all groups in the inventory.
         """
         groups = self.collection.find()
-        return [HostGroup(group['group_name'], group['description']) for group in groups]
+        return [HostGroup(name=group['group_name'], description=group['description']) for group in groups]
 
     def add_variable(self, variable: Variable) -> None:
-        """Add a variable to the inventory.
+        """
+        Add a variable to the inventory.
 
         Args:
             variable (Variable): The variable object representing the variable to add.
         """
         variable_data = {
-            'variable_name': variable.variable_name,
+            'variable_name': variable.name,
             'value': variable.value
         }
         self.collection.insert_one(variable_data)
 
     def delete_variable(self, variable_name: str) -> None:
-        """Delete a variable from the inventory.
+        """
+        Delete a variable from the inventory.
 
         Args:
             variable_name (str): The name of the variable to delete.
@@ -219,7 +247,8 @@ class InventoryManager:
         self.collection.delete_one({'variable_name': variable_name})
 
     def update_variable(self, variable_name: str, new_data: Dict) -> None:
-        """Update a variable in the inventory.
+        """
+        Update a variable in the inventory.
 
         Args:
             variable_name (str): The name of the variable to update.
@@ -228,7 +257,8 @@ class InventoryManager:
         self.collection.update_one({'variable_name': variable_name}, {'$set': new_data})
 
     def get_variable_by_name(self, variable_name: str) -> Optional[Variable]:
-        """Retrieve a variable by its name.
+        """
+        Retrieve a variable by its name.
 
         Args:
             variable_name (str): The name of the variable.
@@ -238,14 +268,31 @@ class InventoryManager:
         """
         variable_data = self.collection.find_one({'variable_name': variable_name})
         if variable_data:
-            return Variable(variable_data['variable_name'], variable_data['value'])
+            return Variable(name=variable_data['variable_name'], value=variable_data['value'])
         return None
 
     def get_variables(self) -> List[Variable]:
-        """Retrieve all variables from the inventory.
+        """
+        Retrieve all variables from the inventory.
 
         Returns:
             List[Variable]: List of all variables in the inventory.
         """
         variables = self.collection.find()
-        return [Variable(variable['variable_name'], variable['value']) for variable in variables]
+        return [Variable(name=variable['variable_name'], value=variable['value']) for variable in variables]
+    
+    def get_variable_by_key(self, variable_name: str) -> Optional[Variable]:
+        """
+        Retrieve a variable by its name.
+
+        Args:
+            variable_name (str): The name of the variable.
+
+        Returns:
+            Optional[Variable]: The variable object if found, None otherwise.
+        """
+        variable_data = self.collection.find_one({'variable_name': variable_name})
+        if variable_data:
+            return Variable(name=variable_data['variable_name'], value=variable_data['value'])
+        return None
+

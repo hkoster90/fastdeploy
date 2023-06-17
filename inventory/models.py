@@ -35,10 +35,6 @@ class Host(BaseModel):
             raise ValueError(f'Invalid IP address ({value}) provided')
         return value
     
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.cipher_suite = Fernet(config.ENCRYPTION_KEY)
-
     def encrypt_password(self) -> str:
         """
         Encrypts the password using the encryption key if it is not already encrypted.
@@ -47,7 +43,8 @@ class Host(BaseModel):
             str: The encrypted password.
         """
         if not self._is_password_encrypted():
-            encrypted_password = self.cipher_suite.encrypt(self.password.encode())
+            cipher_suite = Fernet(config.ENCRYPTION_KEY)
+            encrypted_password = cipher_suite.encrypt(self.password.encode())
             self.password = encrypted_password.decode()
         return self.password
 
@@ -59,7 +56,8 @@ class Host(BaseModel):
             str: The decrypted password.
         """
         if self._is_password_encrypted():
-            decrypted_password = self.cipher_suite.decrypt(self.password.encode())
+            cipher_suite = Fernet(config.ENCRYPTION_KEY)
+            decrypted_password = cipher_suite.decrypt(self.password.encode())
             self.password = decrypted_password.decode()
         return self.password
 
@@ -83,7 +81,7 @@ class HostGroup(BaseModel):
     Represents a host group in the inventory.
     """
 
-    name: str
+    group_name: str
     hosts: List[Host] = []
 
 
@@ -92,5 +90,5 @@ class Variable(BaseModel):
     Represents a variable in the inventory.
     """
 
-    name: str
+    variable_name: str
     value: str
