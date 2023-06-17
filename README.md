@@ -26,7 +26,7 @@ FastDeploy is a powerful and user-friendly deployment and configuration manageme
 
 1. Configure your inventory file with host information.
 2. Define playbooks and tasks according to your requirements.
-3. Execute playbooks using the FastDeploy.io command-line interface (CLI).
+3. Execute playbooks using the FastDeploy command-line interface (CLI).
 4. Monitor task execution and view logs for troubleshooting.
 
 ## Contributing
